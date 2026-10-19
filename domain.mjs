@@ -225,3 +225,25 @@ export function setPlanQuantity(state,itemId,qty) {
   }else if(line)line.qty=qty;
   else state.draft.lines.push({itemId,name:item.name,category:item.category,qty,cost:item.cost,price:item.price,photo:item.photo||false,color:item.color||'red'});
 }
+
+export function sortedInventory(items,{search='',category='',sort='name'}={}){
+ const names=(a,b)=>a.name.localeCompare(b.name,'ru',{numeric:true});
+ const order={name:names,'price-asc':(a,b)=>a.price-b.price||names(a,b),'price-desc':(a,b)=>b.price-a.price||names(a,b),'qty-asc':(a,b)=>a.qty-b.qty||names(a,b),'qty-desc':(a,b)=>b.qty-a.qty||names(a,b),category:(a,b)=>a.category.localeCompare(b.category,'ru')||names(a,b)};
+ return items.filter(i=>!i.archived&&(!category||i.category===category)&&i.name.toLocaleLowerCase('ru').includes(search.trim().toLocaleLowerCase('ru'))).sort(order[sort]||names);
+}
+export function remainingSales(event,leftovers){
+ if(!event||event.status==='completed')fail('Маркет уже завершён.');
+ const recorded=soldCounts(event),counts={};
+ for(const line of event.plan.lines){
+  const left=leftovers[line.itemId],max=line.qty-(recorded[line.itemId]||0);
+  if(!Number.isInteger(left)||left<0||left>max)fail(`«${line.name}»: остаток от 0 до ${max}. Если продажа внесена ошибочно, сначала отмени её.`);
+  counts[line.itemId]=max-left;
+ }
+ return counts;
+}
+export function finishEventByRemaining(state,id,leftovers,revenue=null){
+ const event=state.events.find(e=>e.id===id),counts=remainingSales(event,leftovers);
+ const hasSales=Object.values(counts).some(q=>q>0);
+ if(!hasSales&&revenue!==null&&revenue!==0)fail('Новых продаж нет. Выручка уже записана.');
+ sellEvent(state,id,counts,{},revenue,true);
+}
