@@ -178,3 +178,21 @@ export function deleteEvent(state,id) {
   if(state.editingId===id){state.editingId=null;state.draft=blankPlan();}
   // Sales already reduced inventory. Deleting an event releases only reserves.
 }
+
+export function deleteShelf(state,id) {
+  if(!state.shelves.some(s=>s.id===id))fail('Полка не найдена.');
+  // Stock includes on-shelf units already. Removing the reservation frees them;
+  // recorded sales must never be added back to inventory.
+  state.shelves=state.shelves.filter(s=>s.id!==id);
+}
+export function setPlanQuantity(state,itemId,qty) {
+  const item=state.inventory.find(i=>i.id===itemId);
+  if(!item||item.archived)fail('Товар не найден.');
+  if(!Number.isInteger(qty)||qty<0||qty>available(state,itemId,state.editingId))fail('Проверь доступное количество товара.');
+  const line=state.draft.lines.find(l=>l.itemId===itemId);
+  if(!qty){
+    state.draft.lines=state.draft.lines.filter(l=>l.itemId!==itemId);
+    state.draft.promos=state.draft.promos.filter(p=>!p.parts.some(part=>part.itemId===itemId));
+  }else if(line)line.qty=qty;
+  else state.draft.lines.push({itemId,name:item.name,category:item.category,qty,cost:item.cost,price:item.price,photo:item.photo||false,color:item.color||'red'});
+}

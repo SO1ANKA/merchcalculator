@@ -83,3 +83,33 @@ test('item deletion protects reservations and preserves history and backup valid
  sellEvent(s,id,{key:5},{},null,true);const history=clone(s.events[0]);s.draft=clone(history.plan);
  deleteItem(s,'key');assert.equal(s.inventory[0].archived,true);assert.equal(s.inventory[0].qty,0);assert.equal(s.draft.lines.length,0);assert.deepEqual(s.events[0],history);validateState(s);
 });
+
+test('deleting a shelf releases stock without restoring sold inventory',async()=>{
+ const {deleteShelf}=await import('../domain.mjs');const s=setup();shelf(s);transferShelf(s,'shelf','key',30);sellShelf(s,'shelf',{key:7});
+ assert.equal(s.inventory[0].qty,93);assert.equal(available(s,'key'),70);
+ deleteShelf(s,'shelf');assert.equal(s.shelves.length,0);assert.equal(s.inventory[0].qty,93);assert.equal(available(s,'key'),93);validateState(s);
+ assert.throws(()=>deleteShelf(s,'missing'));
+});
+test('deleting one shelf preserves other shelf and event reservations',async()=>{
+ const {deleteShelf}=await import('../domain.mjs');const s=setup();saveEvent(s,s.draft,{name:'Маркет',date:'',address:''});shelf(s);transferShelf(s,'shelf','key',20);
+ const another=clone(s.shelves[0]);another.id='other';another.stock.key=10;another.movements=[];s.shelves.push(another);
+ deleteShelf(s,'shelf');assert.equal(available(s,'key'),50);validateState(s);
+});
+test('visual selection changes quantities within free stock and retains custom prices',async()=>{
+ const {setPlanQuantity}=await import('../domain.mjs');const s=setup();s.draft.lines[0].price=499;
+ setPlanQuantity(s,'key',11);assert.equal(s.draft.lines[0].price,499);assert.equal(s.draft.lines[0].qty,11);
+ assert.throws(()=>setPlanQuantity(s,'key',101));assert.throws(()=>setPlanQuantity(s,'key',2.5));assert.throws(()=>setPlanQuantity(s,'key',-1));
+ s.draft.promos=[{id:'pair',name:'Пара',price:500,count:3,parts:[{itemId:'key',qty:2}]}];
+ setPlanQuantity(s,'key',0);assert.equal(s.draft.lines.length,0);assert.equal(s.draft.promos.length,0);
+ setPlanQuantity(s,'sticker',5);assert.equal(s.draft.lines[0].cost,20);assert.equal(s.draft.lines[0].price,80);validateState(s);
+});
+test('finishing after a recorded sale does not add another sale or change inventory',()=>{
+ const s=setup();const id=saveEvent(s,s.draft,{name:'Маркет',date:'',address:''});sellEvent(s,id,{key:12},{},3500);
+ const before=clone(s.events[0].sales),qty=s.inventory[0].qty;
+ sellEvent(s,id,{},{},null,true);assert.deepEqual(s.events[0].sales,before);assert.equal(s.inventory[0].qty,qty);assert.equal(available(s,'key'),qty);validateState(s);
+});
+test('requested bundles remain unchanged when the forecast temporarily falls',()=>{
+ const s=setup();s.draft.lines[0].qty=11;s.draft.promos=[{id:'pair',name:'Пара',price:500,count:5,parts:[{itemId:'key',qty:2}]}];
+ s.draft.sellPercent=60;assert.equal(projection(s.draft).bundles[0].count,3);assert.equal(s.draft.promos[0].count,5);
+ s.draft.sellPercent=100;assert.equal(projection(s.draft).bundles[0].count,5);
+});

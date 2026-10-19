@@ -28,7 +28,7 @@ test('offline Telegram launch URLs reuse the same cached app',async()=>{
   const second=await sw.request('./?tgWebAppStartParam=two');
   assert.equal(await first.text(),'cached:/solyanka/index.html');
   assert.equal(await second.text(),'cached:/solyanka/index.html');
-  const bucket=[...sw.buckets.values()][0];assert.equal(bucket.size,8);
+  const bucket=[...sw.buckets.values()][0];assert.equal(bucket.size,13);
   assert.ok([...bucket.keys()].every(url=>!url.includes('?')));
 });
 
