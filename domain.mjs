@@ -121,7 +121,7 @@ export function validateState(state) {
   const safeId=s=>string(s,100)&&/^[A-Za-z0-9_-]+$/.test(s)&&!['__proto__','constructor','prototype'].includes(s);
   if(!['auto','light','dark'].includes(state.settings.theme))fail('Некорректная настройка темы.');
   const ids=new Set();
-  for(const item of state.inventory) { if(!safeId(item.id)||ids.has(item.id)||!string(item.name,120)||!item.name.trim()||!string(item.category,50)||!integer(item.qty)||!num(item.cost)||!num(item.price)||(item.photo&&(!safeId(item.photo)))) fail('Некорректные данные инвентаря.'); ids.add(item.id); }
+  for(const item of state.inventory) { if((item.archived!==undefined&&typeof item.archived!=='boolean')||(item.archived&&item.qty!==0)||!safeId(item.id)||ids.has(item.id)||!string(item.name,120)||!item.name.trim()||!string(item.category,50)||!integer(item.qty)||!num(item.cost)||!num(item.price)||(item.photo&&(!safeId(item.photo)))) fail('Некорректные данные инвентаря.'); ids.add(item.id); }
   const checkPlan=plan=>{ if(!plan||!['simple','pro'].includes(plan.mode)||!['market','all','plus'].includes(plan.goal)||!num(plan.sellPercent,100)||!num(plan.profit,10000)||!num(plan.table)||![1,10,50,100].includes(plan.round)||!Array.isArray(plan.expenses)||!Array.isArray(plan.lines)||!Array.isArray(plan.promos)) fail('Некорректный расчёт.');
     const lineIds=new Set(); for(const l of plan.lines) {if(!ids.has(l.itemId)||lineIds.has(l.itemId)||!integer(l.qty)||!num(l.cost)||!num(l.price)||!string(l.name,120)||!string(l.category,50)) fail('Некорректная позиция расчёта.'); lineIds.add(l.itemId);}
     for(const e of plan.expenses) if(!string(e.id,100)||!string(e.name,120)||!num(e.amount)) fail('Некорректные расходы.');
@@ -141,4 +141,40 @@ export function demoState() {
   const state=emptyState(); state.inventory=[{id:'key',name:'Брелок «Звезда»',category:'Брелок',qty:60,cost:120,price:350,photo:false,color:'red'},{id:'sticker',name:'Стикерпак «Всякое»',category:'Стикерпак',qty:100,cost:55,price:180,photo:false,color:'blue'},{id:'stand',name:'Стенд «Это я»',category:'Стенд',qty:30,cost:230,price:650,photo:false,color:'lavender'}];
   state.draft={...blankPlan(),table:8000,expenses:[{id:'road',name:'Дорога',amount:700},{id:'decor',name:'Оформление',amount:1300}],lines:state.inventory.map(i=>({itemId:i.id,name:i.name,category:i.category,cost:i.cost,price:i.price,qty:i.id==='key'?40:i.id==='sticker'?60:20})),promos:[]};
   return state;
+}
+
+// Bundle stock and forecast are different limits. Editing keeps the original
+// priority; repeated product rows are combined before any division.
+export function mergeParts(parts) {
+  const quantities=new Map();
+  for(const part of parts) quantities.set(part.itemId,(quantities.get(part.itemId)||0)+part.qty);
+  return [...quantities].map(([itemId,qty])=>({itemId,qty}));
+}
+export function bundleLimits(plan,promo) {
+  const parts=mergeParts(promo.parts);
+  const limit=stock=>parts.length?Math.max(0,Math.min(...parts.map(p=>Number.isInteger(p.qty)&&p.qty>0?Math.floor((stock[p.itemId]||0)/p.qty):0))):0;
+  const stock=Object.fromEntries(plan.lines.map(l=>[l.itemId,l.qty]));
+  const remaining=Object.fromEntries(plan.lines.map(l=>[l.itemId,Math.floor(l.qty*plan.sellPercent/100+1e-8)]));
+  for(const previous of projection(plan).bundles){
+    if(previous.id===promo.id)break;
+    for(const part of previous.parts)remaining[part.itemId]-=part.qty*previous.count;
+  }
+  return {stock:limit(stock),forecast:limit(remaining)};
+}
+export function deleteItem(state,id) {
+  const item=state.inventory.find(i=>i.id===id);
+  if(!item)fail('Товар не найден.');
+  if(reserved(state,id)>0)fail('Сначала освободи товар с маркетов и полок.');
+  state.draft.lines=state.draft.lines.filter(l=>l.itemId!==id);
+  state.draft.promos=state.draft.promos.filter(p=>!p.parts.some(part=>part.itemId===id));
+  state.activity.push({id:uid(),date:today(),kind:'delete',itemId:id,qty:item.qty});
+  // Historical sales retain this record for safe backups and undo. The item
+  // disappears from inventory, selectors and inventory valuations.
+  item.qty=0;item.archived=true;
+}
+export function deleteEvent(state,id) {
+  if(!state.events.some(e=>e.id===id))fail('Маркет не найден.');
+  state.events=state.events.filter(e=>e.id!==id);
+  if(state.editingId===id){state.editingId=null;state.draft=blankPlan();}
+  // Sales already reduced inventory. Deleting an event releases only reserves.
 }

@@ -54,3 +54,32 @@ test('simple rounded prices reach the target and share bundle stock in varied pl
     assert.equal(p.sold,p.lines.reduce((sum,line)=>sum+line.single,0)+p.bundles[0].count*2);
   }
 });
+
+test('bundle limits show stock separately from sell-through, including duplicate rows',async()=>{
+ const {bundleLimits,mergeParts}=await import('../domain.mjs');const s=setup();s.draft.lines[0].qty=11;
+ const pair={id:'pair',parts:[{itemId:'key',qty:1},{itemId:'key',qty:1}]};
+ assert.deepEqual(mergeParts(pair.parts),[{itemId:'key',qty:2}]);
+ assert.deepEqual(bundleLimits(s.draft,pair),{stock:5,forecast:3});
+ s.draft.sellPercent=100;assert.deepEqual(bundleLimits(s.draft,pair),{stock:5,forecast:5});
+ s.draft.sellPercent=0;assert.deepEqual(bundleLimits(s.draft,pair),{stock:5,forecast:0});
+});
+test('editing a bundle excludes itself and later promotions from its available count',async()=>{
+ const {bundleLimits}=await import('../domain.mjs');const s=setup();s.draft.lines[0].qty=11;s.draft.sellPercent=100;
+ const first={id:'first',name:'Первый',parts:[{itemId:'key',qty:2}],count:4,price:500};
+ const second={id:'second',name:'Второй',parts:[{itemId:'key',qty:2}],count:1,price:500};s.draft.promos=[first,second];
+ assert.equal(bundleLimits(s.draft,first).forecast,5);assert.equal(bundleLimits(s.draft,second).forecast,1);
+ assert.equal(bundleLimits(s.draft,{id:'new',parts:first.parts}).forecast,0);
+});
+test('deleting completed markets never returns sold units to inventory',async()=>{
+ const {deleteEvent}=await import('../domain.mjs');const s=setup();const id=saveEvent(s,s.draft,{name:'Маркет',date:'',address:''});sellEvent(s,id,{key:11},{},null,true);
+ deleteEvent(s,id);assert.equal(s.inventory[0].qty,89);assert.equal(available(s,'key'),89);assert.equal(s.events.length,0);validateState(s);
+});
+test('deleting active markets releases reservations and clears only their edited draft',async()=>{
+ const {deleteEvent}=await import('../domain.mjs');const s=setup();const id=saveEvent(s,s.draft,{name:'Маркет',date:'',address:''});sellEvent(s,id,{key:5},{});s.editingId=id;s.draft=clone(s.events[0].plan);
+ deleteEvent(s,id);assert.equal(s.inventory[0].qty,95);assert.equal(available(s,'key'),95);assert.equal(s.editingId,null);assert.equal(s.draft.lines.length,0);validateState(s);
+});
+test('item deletion protects reservations and preserves history and backup validity',async()=>{
+ const {deleteItem}=await import('../domain.mjs');const s=setup();const id=saveEvent(s,s.draft,{name:'Маркет',date:'',address:''});assert.throws(()=>deleteItem(s,'key'));
+ sellEvent(s,id,{key:5},{},null,true);const history=clone(s.events[0]);s.draft=clone(history.plan);
+ deleteItem(s,'key');assert.equal(s.inventory[0].archived,true);assert.equal(s.inventory[0].qty,0);assert.equal(s.draft.lines.length,0);assert.deepEqual(s.events[0],history);validateState(s);
+});
