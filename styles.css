@@ -225,3 +225,12 @@ input::-webkit-date-and-time-value{text-align:left;min-height:1.4em}input::-webk
 @media(max-height:600px){.pro-layout .summary-column{position:static}}
 .manual-price-card{padding:18px;margin:14px 0}.manual-price-heading{display:flex;align-items:center;gap:12px;margin-bottom:18px}.manual-price-heading>.thumb{width:52px;height:52px}.manual-price-heading>span{min-width:0}.manual-price-heading strong{display:block;font-size:17px;overflow-wrap:anywhere}.manual-price-heading small{display:block;font-size:14px;color:var(--muted);margin-top:4px}.manual-price-card .field{margin-bottom:14px}.manual-price-card .field>span{font-size:14px}.manual-price-card .form-grid{grid-template-columns:1fr 1fr}.manual-price-card input[type=range]{margin-top:6px}
 @media(max-width:360px){.manual-price-card .form-grid{grid-template-columns:1fr}}
+
+/* Explicit width is required for native range inputs; their default is ~129px. */
+input[type=range]{width:100%;max-width:100%;min-width:0;box-sizing:border-box;margin:18px 0;align-self:stretch}
+.range-card,.manual-price-card,.range-wrap{min-width:0}
+/* Full-width illustration above the introduction instead of a narrow side rail. */
+.welcome-layout{display:flex;flex-direction:column;gap:12px;align-items:center}
+.welcome-layout>.welcome-hero{width:min(100%,290px);height:clamp(230px,38dvh,340px);max-width:none;object-fit:contain;flex-shrink:0;margin:0 auto}
+.welcome-layout>div{width:100%}.welcome-lead{text-align:center;margin-bottom:20px}.welcome-item{margin:16px 0;font-size:15px}.welcome-item strong{font-size:17px}
+@media(max-width:360px){.welcome-layout>.welcome-hero{width:240px;height:260px}}

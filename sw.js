@@ -1,6 +1,6 @@
 const SCOPE=new URL(self.registration.scope);
 const PREFIX=`solyanka:${SCOPE.pathname}:`;
-const CACHE=PREFIX+'v9';
+const CACHE=PREFIX+'v10';
 const FILES=['index.html','styles.css','app.mjs','domain.mjs','storage.mjs','assets/logo.png','assets/favicon.svg','manifest.webmanifest','assets/hero-thinking.png','assets/hero-welcome.png','assets/backup-art.png','assets/calculator-art.png','assets/delete-art.png'];
 const URLS=new Set(FILES.map(file=>new URL(file,SCOPE).href));
 const INDEX=new URL('index.html',SCOPE).href;

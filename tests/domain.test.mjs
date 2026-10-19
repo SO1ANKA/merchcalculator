@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {emptyState,blankPlan,clone,projection,available,saveEvent,sellEvent,sellShelf,transferShelf,validateState,addStock,shelfReport} from '../domain.mjs';
 
-function setup(){const s=emptyState();s.inventory=[{id:'key',name:'Брелок',category:'Брелок',qty:100,cost:100,price:300},{id:'sticker',name:'Стикер',category:'Стикер',qty:100,cost:20,price:80}];s.draft={...blankPlan(),table:8000,lines:[{itemId:'key',name:'Брелок',category:'Брелок',qty:40,cost:100,price:300}]};return s;}
+function setup(){const s=emptyState();s.inventory=[{id:'key',name:'Брелок',category:'Брелок',qty:100,cost:100,price:300},{id:'sticker',name:'Стикер',category:'Стикер',qty:100,cost:20,price:80}];s.draft={...blankPlan(),pricingModel:'legacy',table:8000,lines:[{itemId:'key',name:'Брелок',category:'Брелок',qty:40,cost:100,price:300}]};return s;}
 function shelf(s){s.shelves.push({id:'shelf',name:'Полка',address:'',rent:1000,commission:10,interval:14,nextRent:'2026-11-01',nextCheck:'2026-11-01',stock:{},prices:{},costs:{},targets:{},sales:[],payments:[],movements:[]});return s.shelves[0];}
 test('three simple targets count only items taken, not entire inventory',()=>{const s=setup();for(const [goal,target]of [['market',8000],['all',12000],['plus',15000]]){s.draft.goal=goal;const p=projection(s.draft);assert.equal(p.target,target);assert.equal(p.sold,24);assert.equal(p.procurement,4000);assert.ok(p.revenue>=target);assert.ok(p.lines[0].price>=100);assert.equal(p.lines[0].price%10,0);}});
 test('cost floor and bundle floor protect simple recommendations',()=>{const s=setup();s.draft.table=1;s.draft.goal='market';let p=projection(s.draft);assert.equal(p.lines[0].price,100);assert.equal(p.floored,true);s.draft.promos=[{id:'pair',name:'Пара',parts:[{itemId:'key',qty:2}],price:50,count:5}];p=projection(s.draft);assert.equal(p.bundles[0].price,200);assert.equal(p.bundles[0].floored,true);assert.equal(p.lines[0].single,14);});
@@ -19,7 +19,7 @@ test('backup validation rejects overbooked stock, foreign sales and NaN',()=>{co
 test('zero-cost products get finite recommendations',()=>{const s=setup();s.draft.lines[0].cost=0;const p=projection(s.draft);assert.ok(Number.isFinite(p.lines[0].price));assert.ok(p.revenue>=p.target);});
 
 test('mixed free and paid items cover the target across the cost floor',()=>{
-  const plan={...blankPlan(),goal:'market',round:1,sellPercent:100,lines:[{itemId:'paid',name:'Платный',qty:2,cost:100,price:0},{itemId:'free',name:'Бесплатный',qty:4,cost:0,price:0}]};
+  const plan={...blankPlan(),pricingModel:'legacy',goal:'market',round:1,sellPercent:100,lines:[{itemId:'paid',name:'Платный',qty:2,cost:100,price:0},{itemId:'free',name:'Бесплатный',qty:4,cost:0,price:0}]};
   for(const [target,paid,free] of [[100,100,0],[202,100,1],[204,100,1],[306,150,2]]){
     plan.table=target;const p=projection(plan);
     assert.equal(p.lines[0].price,paid);assert.equal(p.lines[1].price,free);assert.ok(p.revenue>=target);
@@ -31,7 +31,7 @@ test('mixed free and paid items cover the target across the cost floor',()=>{
 test('stock overview agrees with live reservations, exclusions and completed events',async()=>{
   const {stockLevels}=await import('../domain.mjs');
   const s=setup();const first=saveEvent(s,s.draft,{name:'Первый',date:'',address:''});
-  s.draft={...blankPlan(),mode:'pro',lines:[{itemId:'key',name:'Брелок',category:'Брелок',qty:20,cost:100,price:300}]};
+  s.draft={...blankPlan(),pricingModel:'legacy',mode:'pro',lines:[{itemId:'key',name:'Брелок',category:'Брелок',qty:20,cost:100,price:300}]};
   const second=saveEvent(s,s.draft,{name:'Второй',date:'',address:''});
   shelf(s);transferShelf(s,'shelf','key',10);sellEvent(s,first,{key:7},{});
   for(const exclude of [null,first,second])for(const item of s.inventory){
@@ -46,7 +46,7 @@ test('stock overview agrees with live reservations, exclusions and completed eve
 test('simple rounded prices reach the target and share bundle stock in varied plans',()=>{
   let seed=47031;const random=max=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed%max;};
   for(let n=0;n<500;n++){
-    const plan={...blankPlan(),table:random(50000),goal:['market','all','plus'][random(3)],profit:random(100),round:[1,10,50,100][random(4)],sellPercent:random(100)+1,lines:Array.from({length:5},(_,i)=>({itemId:'i'+i,name:'Товар '+i,qty:random(100)+1,cost:random(3)?random(20000)/100:0,price:0}))};
+    const plan={...blankPlan(),pricingModel:'legacy',table:random(50000),goal:['market','all','plus'][random(3)],profit:random(100),round:[1,10,50,100][random(4)],sellPercent:random(100)+1,lines:Array.from({length:5},(_,i)=>({itemId:'i'+i,name:'Товар '+i,qty:random(100)+1,cost:random(3)?random(20000)/100:0,price:0}))};
     plan.promos=[{id:'pair',name:'Пара',parts:[{itemId:'i0',qty:2}],count:random(20),price:random(1000)}];
     const p=projection(plan);
     for(const line of p.lines){assert.ok(line.price>=line.cost);assert.ok(line.single>=0);assert.ok(line.sold<=line.qty);}
@@ -112,4 +112,39 @@ test('requested bundles remain unchanged when the forecast temporarily falls',()
  const s=setup();s.draft.lines[0].qty=11;s.draft.promos=[{id:'pair',name:'Пара',price:500,count:5,parts:[{itemId:'key',qty:2}]}];
  s.draft.sellPercent=60;assert.equal(projection(s.draft).bundles[0].count,3);assert.equal(s.draft.promos[0].count,5);
  s.draft.sellPercent=100;assert.equal(projection(s.draft).bundles[0].count,5);
+});
+
+test('category guide reflects reference products with smaller markup for expensive merch',async()=>{
+ const {priceGuide}=await import('../domain.mjs');
+ const stand=priceGuide({category:'Стенд',cost:1000}),key=priceGuide({category:'Брелок',cost:125}),card=priceGuide({category:'Открытка',cost:30});
+ assert.equal(stand.ceiling,2000);assert.equal(key.ceiling,400);assert.equal(card.ceiling,200);
+ assert.ok(stand.ceiling/1000<key.ceiling/125);assert.ok(key.ceiling/125<card.ceiling/30);
+ assert.ok(priceGuide({category:'Стенд',cost:1500}).ceiling/1500<stand.ceiling/1000);
+});
+test('new simple pricing stops at guides and reports an impossible goal instead of raising prices',()=>{
+ const plan={...blankPlan(),sellPercent:100,table:50000,lines:[{itemId:'stand',name:'Стенд',category:'Стенд',qty:1,cost:1000,price:99999},{itemId:'key',name:'Брелок',category:'Брелок',qty:1,cost:125,price:0},{itemId:'card',name:'Открытка',category:'Открытка',qty:1,cost:30,price:0}]};
+ const p=projection(plan);assert.deepEqual(p.lines.map(l=>l.price),[2000,400,200]);assert.equal(p.revenue,2600);assert.equal(p.shortfall,48555);assert.equal(p.priceLimited,true);
+ plan.mode='pro';assert.equal(projection(plan).lines[0].price,99999);
+});
+test('new break even and growth goals use all taken procurement and participation',()=>{
+ const plan={...blankPlan(),sellPercent:100,table:600,lines:[{itemId:'stand',name:'Стенд',category:'Стенд',qty:1,cost:1000,price:0},{itemId:'key',name:'Брелок',category:'Брелок',qty:1,cost:125,price:0},{itemId:'card',name:'Открытка',category:'Открытка',qty:1,cost:30,price:0}]};
+ let p=projection(plan);assert.equal(p.target,1755);assert.ok(p.revenue>=1755);assert.ok(p.cash>=0);assert.ok(!p.priceLimited);const first=p.lines.map(l=>l.price);
+ plan.goal='plus';plan.profit=25;p=projection(plan);assert.equal(p.target,2193.75);assert.ok(p.revenue>=p.target);assert.ok(p.lines.every((l,i)=>l.price>=first[i]));assert.ok(p.lines[0].price<2000);assert.ok(p.lines[2].price/30>p.lines[0].price/1000);
+});
+test('category rounding stays above cost, within ceilings and reaches every feasible target',async()=>{
+ const {categoryPrices,priceGuide}=await import('../domain.mjs');let seed=61;const random=n=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed%n;};
+ for(let run=0;run<300;run++){
+  const step=[1,10,50,100][random(4)],lines=Array.from({length:7},()=>({cost:random(500001)/100,category:['Стенд','Брелок','Открытка','Другое'][random(4)],single:random(40)}));
+  const maximum=lines.reduce((n,l)=>n+l.single*priceGuide(l,step).ceiling,0),target=maximum*random(101)/100,prices=categoryPrices(lines,target,step),actual=lines.reduce((n,l,i)=>n+l.single*prices[i].price,0);
+  assert.ok(actual+0.01>=target);for(let i=0;i<lines.length;i++){assert.ok(prices[i].price>=lines[i].cost);assert.ok(prices[i].price<=prices[i].ceiling);assert.equal(prices[i].price%step,0);}
+ }
+});
+test('new pricing handles zero sales, free goods and costs above the category guide',()=>{
+ const plan={...blankPlan(),table:100,lines:[{itemId:'free',name:'Даром',category:'Открытка',qty:5,cost:0,price:0},{itemId:'expensive',name:'Дорогой',category:'Стенд',qty:1,cost:9000.01,price:0}]};
+ plan.sellPercent=0;let p=projection(plan);assert.equal(p.revenue,0);assert.ok(p.lines.every(l=>Number.isFinite(l.price)&&l.price>=l.cost));
+ plan.sellPercent=100;p=projection(plan);assert.ok(p.revenue>=p.target);assert.ok(p.lines[1].price>=9000.01);
+});
+test('unversioned saved plans keep their historical simple calculation',()=>{
+ const plan={...blankPlan(),table:50000,sellPercent:100,lines:[{itemId:'stand',name:'Стенд',category:'Стенд',qty:1,cost:1000,price:0}]};delete plan.pricingModel;
+ assert.equal(projection(plan).lines[0].price,51000);
 });

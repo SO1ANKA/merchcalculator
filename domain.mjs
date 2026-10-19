@@ -5,7 +5,7 @@ export const roundMoney = n => Math.round((n + Number.EPSILON) * 100) / 100;
 export const categories = ['Брелок','Стенд','Значок','Стикер','Стикерпак','Открытка','Принт','Другое'];
 const sum = values => values.reduce((a,b)=>a+b,0);
 const fail = text => { throw new Error(text); };
-export function blankPlan() { return {mode:'simple',goal:'all',profit:25,sellPercent:60,round:10,table:0,expenses:[],lines:[],promos:[]}; }
+export function blankPlan() { return {pricingModel:'category-v1',mode:'simple',goal:'all',profit:25,sellPercent:60,round:10,table:0,expenses:[],lines:[],promos:[]}; }
 export function emptyState() { return {version:1,updatedAt:Date.now(),settings:{theme:'auto',backupNoticeSeen:false},inventory:[],events:[],shelves:[],draft:blankPlan(),editingId:null,activity:[]}; }
 export function soldCounts(event) { const counts={}; for(const sale of event.sales||[]) for(const [id,qty] of Object.entries(sale.counts)) counts[id]=(counts[id]||0)+qty; return counts; }
 export function reserved(state,itemId,excludeEvent=null) {
@@ -27,6 +27,30 @@ export function stockLevels(state,excludeEvent=null) {
   return levels;
 }
 export const eventExpenses = plan => roundMoney(plan.table+sum(plan.expenses.map(e=>e.amount)));
+// Product heuristics based on the author's examples, not measured market prices.
+const categoryPricing={
+  'Стенд':[1000,1750,2000], 'Брелок':[125,375,400], 'Значок':[75,250,350],
+  'Стикер':[30,150,200], 'Стикерпак':[55,220,300], 'Открытка':[30,170,200],
+  'Принт':[100,350,450], 'Другое':[100,300,500]
+};
+export function priceGuide(line,step=10){
+  const [reference,typical,upper]=categoryPricing[line.category]||categoryPricing['Другое'];
+  // Square-root scaling lowers the markup ratio as manufacturing cost grows.
+  const scale=Math.sqrt(Math.max(line.cost,reference/4)/reference);
+  const floor=roundMoney(Math.ceil((line.cost-1e-8)/step)*step);
+  const ceiling=roundMoney(Math.max(floor,Math.floor((upper*scale+1e-8)/step)*step));
+  const weight=Math.max(1,typical*scale-floor);
+  return {floor,ceiling,weight};
+}
+export function categoryPrices(lines,needed,step=10){
+  const guides=lines.map(l=>priceGuide(l,step));
+  const price=(g,t)=>roundMoney(Math.min(g.ceiling,Math.ceil((g.floor+t*g.weight-1e-8)/step)*step));
+  const total=t=>lines.reduce((sum,l,i)=>sum+l.single*price(guides[i],t),0);
+  let low=0,high=Math.max(0,...guides.map(g=>(g.ceiling-g.floor)/g.weight));
+  if(needed<=total(0))high=0;
+  else if(needed<=total(high))for(let i=0;i<48;i++){const mid=(low+high)/2;if(total(mid)+1e-7>=needed)high=mid;else low=mid;}
+  return guides.map(g=>({...g,price:price(g,high)}));
+}
 export function projection(plan) {
   const costs=eventExpenses(plan), procurement=roundMoney(sum(plan.lines.map(l=>l.cost*l.qty)));
   const linesById=new Map(plan.lines.map(line=>[line.itemId,line]));
@@ -46,7 +70,7 @@ export function projection(plan) {
   const target=plan.goal==='market'?costs:(costs+procurement)*(plan.goal==='plus'?1+plan.profit/100:1);
   const singles=plan.lines.map(l=>({...l,sold:capacity[l.itemId]||0,single:(capacity[l.itemId]||0)-(used[l.itemId]||0)}));
   let coefficient=0;
-  if(plan.mode==='simple') {
+  if(plan.mode==='simple'&&plan.pricingModel!=='category-v1') {
     const base=sum(singles.map(line=>line.single*line.cost));
     const zeroCostUnits=sum(singles.filter(line=>line.cost===0).map(line=>line.single));
     const needed=target-promoRevenue;
@@ -56,10 +80,15 @@ export function projection(plan) {
       ?(needed-base)/zeroCostUnits:needed/(base+zeroCostUnits||1);
   }
   const step=plan.round||1;
-  const lines=singles.map(l=>{ const raw=(l.cost||1)*coefficient; const recommended=roundMoney(Math.ceil((Math.max(l.cost,raw)-1e-8)/step)*step); return {...l,price:plan.mode==='simple'?recommended:l.price,floored:plan.mode==='simple' && l.single>0 && raw<l.cost-0.001}; });
+  const guided=plan.mode==='simple'&&plan.pricingModel==='category-v1'?categoryPrices(singles,target-promoRevenue,step):null;
+  const lines=singles.map((l,i)=>{
+    if(guided){const guide=guided[i];return {...l,price:guide.price,priceCeiling:guide.ceiling,capped:guide.price>=guide.ceiling,floored:l.single>0&&guide.price===guide.floor};}
+    const raw=(l.cost||1)*coefficient, recommended=roundMoney(Math.ceil((Math.max(l.cost,raw)-1e-8)/step)*step);
+    return {...l,price:plan.mode==='simple'?recommended:l.price,floored:plan.mode==='simple'&&l.single>0&&raw<l.cost-0.001};
+  });
   const revenue=roundMoney(promoRevenue+sum(lines.map(l=>l.single*l.price)));
   const cogs=roundMoney(promoCogs+sum(lines.map(l=>l.single*l.cost)));
-  return {costs,procurement,target:roundMoney(target),revenue,cogs,cash:roundMoney(revenue-costs-procurement),profit:roundMoney(revenue-costs-cogs),sold:sum(Object.values(capacity)),total:sum(plan.lines.map(l=>l.qty)),lines,bundles,bundleCount,shortfall:roundMoney(Math.max(0,target-revenue)),floored:lines.some(l=>l.floored)||bundles.some(b=>b.floored)};
+  return {costs,procurement,target:roundMoney(target),revenue,cogs,cash:roundMoney(revenue-costs-procurement),profit:roundMoney(revenue-costs-cogs),sold:sum(Object.values(capacity)),total:sum(plan.lines.map(l=>l.qty)),lines,bundles,bundleCount,shortfall:roundMoney(Math.max(0,target-revenue)),floored:lines.some(l=>l.floored)||bundles.some(b=>b.floored),priceLimited:!!guided&&revenue+0.01<target};
 }
 export function validatePlan(state,plan,exclude=null) {
   if(!plan.lines.length) fail('Добавь товар в расчёт.');
@@ -122,7 +151,7 @@ export function validateState(state) {
   if(!['auto','light','dark'].includes(state.settings.theme))fail('Некорректная настройка темы.');
   const ids=new Set();
   for(const item of state.inventory) { if((item.archived!==undefined&&typeof item.archived!=='boolean')||(item.archived&&item.qty!==0)||!safeId(item.id)||ids.has(item.id)||!string(item.name,120)||!item.name.trim()||!string(item.category,50)||!integer(item.qty)||!num(item.cost)||!num(item.price)||(item.photo&&(!safeId(item.photo)))) fail('Некорректные данные инвентаря.'); ids.add(item.id); }
-  const checkPlan=plan=>{ if(!plan||!['simple','pro'].includes(plan.mode)||!['market','all','plus'].includes(plan.goal)||!num(plan.sellPercent,100)||!num(plan.profit,10000)||!num(plan.table)||![1,10,50,100].includes(plan.round)||!Array.isArray(plan.expenses)||!Array.isArray(plan.lines)||!Array.isArray(plan.promos)) fail('Некорректный расчёт.');
+  const checkPlan=plan=>{ if(!plan||(plan.pricingModel!==undefined&&!['legacy','category-v1'].includes(plan.pricingModel))||!['simple','pro'].includes(plan.mode)||!['market','all','plus'].includes(plan.goal)||!num(plan.sellPercent,100)||!num(plan.profit,10000)||!num(plan.table)||![1,10,50,100].includes(plan.round)||!Array.isArray(plan.expenses)||!Array.isArray(plan.lines)||!Array.isArray(plan.promos)) fail('Некорректный расчёт.');
     const lineIds=new Set(); for(const l of plan.lines) {if(!ids.has(l.itemId)||lineIds.has(l.itemId)||!integer(l.qty)||!num(l.cost)||!num(l.price)||!string(l.name,120)||!string(l.category,50)) fail('Некорректная позиция расчёта.'); lineIds.add(l.itemId);}
     for(const e of plan.expenses) if(!string(e.id,100)||!string(e.name,120)||!num(e.amount)) fail('Некорректные расходы.');
     const promoIds=new Set(); for(const p of plan.promos) {if(!safeId(p.id)||promoIds.has(p.id)||!string(p.name,120)||!p.name.trim()||!num(p.price)||!integer(p.count)||!Array.isArray(p.parts)||!p.parts.length||p.parts.length>10) fail('Некорректная акция.');promoIds.add(p.id);const partIds=new Set();for(const part of p.parts) {if(!lineIds.has(part.itemId)||partIds.has(part.itemId)||!integer(part.qty)||part.qty<1) fail('Некорректный состав набора.');partIds.add(part.itemId);} }
