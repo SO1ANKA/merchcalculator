@@ -143,7 +143,7 @@ export function sellShelf(state,id,quantities,override=null) {
 export function shelfReport(shelf,month=today().slice(0,7)) { const sales=shelf.sales.filter(s=>s.date.startsWith(month)),rent=sum(shelf.payments.filter(p=>p.date.startsWith(month)).map(p=>p.amount)); const revenue=sum(sales.map(s=>s.revenue)),cogs=sum(sales.map(s=>s.cogs)),commission=sum(sales.map(s=>s.commission||0)); return {revenue:roundMoney(revenue),cogs:roundMoney(cogs),commission:roundMoney(commission),rent:roundMoney(rent),profit:roundMoney(revenue-cogs-commission-rent)}; }
 export function addStock(state,id,qty,cost) { const item=state.inventory.find(i=>i.id===id); if(!item||!Number.isInteger(qty)||qty<1||!Number.isFinite(cost)||cost<0) fail('Проверь количество и себестоимость.'); item.cost=roundMoney((item.qty*item.cost+qty*cost)/(item.qty+qty)); item.qty+=qty; state.activity.push({id:uid(),date:today(),kind:'purchase',itemId:id,qty,cost}); }
 export function validateState(state) {
-  if(!state||state.version!==1||!state.settings||!Array.isArray(state.inventory)||!Array.isArray(state.events)||!Array.isArray(state.shelves)||!Array.isArray(state.activity)||!state.draft) fail('Файл не является копией Солянки или его версия не поддерживается.');
+  if(!state||state.version!==1||!state.settings||!Array.isArray(state.inventory)||!Array.isArray(state.events)||!Array.isArray(state.shelves)||!Array.isArray(state.activity)||!state.draft) fail('Файл не является копией «Твой Мерч» или его версия не поддерживается.');
   const num=(n,max=1e9)=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=max;
   const integer=n=>num(n,1e7)&&Number.isInteger(n);
   const string=(s,max=500)=>typeof s==='string'&&s.length<=max;
