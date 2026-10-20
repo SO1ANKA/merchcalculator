@@ -270,20 +270,32 @@ input,textarea,select{scroll-margin-block:28px}
 .planned-button:disabled{display:flex;align-items:center;gap:9px;min-height:44px;color:var(--muted);font-size:16px;font-weight:600;opacity:1;cursor:not-allowed;text-align:left;flex:1;min-width:150px}
 .planned-label{font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:5px 8px;white-space:nowrap}.planned-feature p{flex-basis:100%;margin:0;font-size:15px;line-height:1.5;color:var(--muted)}
 .profile-card{text-align:center;padding:12px 0 24px}.profile-card .profile-avatar-large{width:82px;height:82px;font-size:32px;margin:0 auto 16px}.profile-card h3{font-size:24px;overflow-wrap:anywhere}.profile-card p{font-size:15px;line-height:1.5;color:var(--muted);margin-top:8px}.profile-friends h3{font-size:20px;margin-bottom:8px}.profile-friends>p{font-size:16px;line-height:1.5;color:var(--muted)}.profile-friends .planned-feature{margin:12px 0}.profile-local{display:flex;gap:9px;font-size:14px;line-height:1.5;color:var(--muted);margin-top:24px}.profile-local svg{flex-shrink:0;margin-top:2px}
-dialog.welcome-sheet{width:min(840px,calc(100% - 32px));max-width:840px;max-height:94dvh;border-radius:28px;background:var(--bg)}
-.welcome-sheet .sheet-header{background:var(--bg);padding:22px 28px 10px}.welcome-sheet .sheet-header h2{font-size:24px}.welcome-sheet .sheet-body{padding:8px 28px 24px}.intro-scene{position:relative;min-height:475px;display:flex;align-items:center;padding:18px 0}
-.intro-character{position:absolute;z-index:2;left:-22px;bottom:0;width:42%;height:100%;max-height:510px;object-fit:contain;object-position:center bottom;pointer-events:none;filter:drop-shadow(0 12px 16px #00000012)}
-.intro-panel{position:relative;margin-left:30%;width:70%;padding:30px 28px 30px 68px;border-radius:24px;background:var(--card);border:1px solid var(--line);box-shadow:0 8px 30px #00000004;min-width:0}
-.intro-eyebrow{font-size:13px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}.intro-panel h3{font-size:28px;line-height:1.18;letter-spacing:-.6px;margin:0 0 26px;outline:none}.intro-feature{display:flex;align-items:flex-start;gap:13px;margin-top:22px}.intro-feature>svg{flex-shrink:0;color:var(--red);margin-top:1px}.intro-feature:nth-of-type(2)>svg{color:var(--blue)}.intro-feature:nth-of-type(3)>svg{color:var(--green)}.intro-feature strong{font-size:18px}.intro-feature p{font-size:16px;line-height:1.45;color:var(--muted);margin-top:5px}.intro-copy{font-size:16px;line-height:1.55;margin:0 0 16px}.intro-tip{display:flex;gap:10px;align-items:flex-start;background:var(--blue-soft);padding:14px;border-radius:14px;font-size:15px;line-height:1.5;margin:18px 0}.intro-tip svg{flex-shrink:0;color:var(--blue)}.intro-footnote{font-size:13px;line-height:1.5;color:var(--muted);margin-top:18px}.intro-navigation{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:16px}.intro-progress{display:flex;gap:6px}.intro-progress i{width:8px;height:8px;border-radius:10px;background:var(--line)}.intro-progress .current{width:24px;background:var(--red)}.intro-buttons{display:flex;gap:8px}.intro-buttons .button{min-height:48px}
+/* Square illustration slots keep replacement chibis consistent throughout the app. */
+.illustration{aspect-ratio:1;object-fit:contain}
+.empty-art,.dialog-art,.help-art,.calculator-intro>.illustration{width:clamp(130px,38vw,210px);height:auto;aspect-ratio:1;object-fit:contain;margin:0 auto 16px}
+.profile-header{padding:7px 12px 7px 7px;background:var(--card);border:1px solid var(--line);border-radius:17px;min-height:56px;transition:background .15s}
+.profile-header:hover{background:var(--blue-soft)}.profile-header:active{transform:scale(.98)}
+.demo-banner{gap:10px}.demo-banner button{font-size:14px;font-weight:650;min-height:44px;padding:8px 12px;border-radius:12px;background:var(--card);white-space:nowrap}
+dialog.welcome-sheet{width:min(580px,calc(100% - 24px));max-width:580px;max-height:calc(100dvh - var(--safe-top,0px) - var(--safe-bottom,0px) - 24px);border-radius:26px;background:var(--card);overflow:auto;padding:0}
+.welcome-sheet .sheet-header{position:static;padding:16px 20px 6px;background:transparent}.welcome-sheet .sheet-header h2{font-size:21px}.welcome-sheet .sheet-body{padding:0 22px 20px}
+.intro-scene{display:flex;flex-direction:column;align-items:center;gap:8px}
+.intro-character{display:block;width:clamp(96px,23dvh,200px);height:auto;aspect-ratio:1;object-fit:contain;border-radius:20px;flex-shrink:0}
+.intro-panel{width:100%;min-height:235px;padding:0 8px}.intro-panel h3{font-size:24px;line-height:1.2;letter-spacing:-.5px;text-align:center;margin:0 0 18px;outline:none}
+.intro-feature{display:flex;align-items:center;gap:12px;margin:14px 0}.intro-feature>svg{color:var(--red)}.intro-feature:nth-of-type(2)>svg{color:var(--blue)}.intro-feature:nth-of-type(3)>svg{color:var(--green)}.intro-feature strong{font-size:17px}.intro-feature p{font-size:15px;line-height:1.4;color:var(--muted);margin-top:3px}
+.intro-copy{font-size:16px;line-height:1.5;margin:0 0 16px}.intro-tip{display:flex;gap:10px;align-items:flex-start;background:var(--blue-soft);border-radius:14px;padding:14px;font-size:15px;line-height:1.45;margin:14px 0}.intro-tip svg{flex-shrink:0;color:var(--blue)}.intro-future{color:var(--muted);font-size:15px}
+.intro-navigation{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.intro-progress{display:flex;gap:6px;flex-shrink:0}.intro-progress i{width:8px;height:8px;border-radius:10px;background:var(--line)}.intro-progress .current{width:22px;background:var(--red)}.intro-buttons{display:flex;gap:10px}.intro-buttons .button{min-height:46px;padding:10px 18px}.intro-buttons .intro-arrow{width:48px;padding:10px}.intro-arrow:disabled{background:var(--bg);color:var(--muted);opacity:.45}.intro-demo-actions{display:flex;gap:8px}.intro-demo-actions .button{font-size:14px;padding:10px 12px}
 @media(max-width:600px){
- dialog.welcome-sheet{width:100%;max-width:100%;border-radius:26px 26px 0 0;max-height:94dvh}
- .welcome-sheet .sheet-header{padding:16px 20px 8px}.welcome-sheet .sheet-header h2{font-size:22px}.welcome-sheet .sheet-body{padding:0 16px 20px}
- .intro-scene{display:block;padding:0;min-height:0;padding-top:230px}
- .intro-character{top:0;bottom:auto;left:0;width:200px;height:310px;max-height:none;object-position:left top}
- .intro-panel{margin-left:26px;width:calc(100% - 26px);padding:90px 22px 24px;border-radius:22px}
- .intro-panel h3{font-size:25px;margin-bottom:22px}.intro-eyebrow{position:absolute;top:24px;right:20px;max-width:110px;font-size:12px;text-align:right}
- .intro-feature{margin-top:18px}.intro-feature p{font-size:16px}.intro-navigation{padding:16px 4px 0}.intro-buttons .button{padding:12px 18px}
+ dialog.welcome-sheet{top:50%;bottom:auto;left:50%;right:auto;transform:translate(-50%,-50%);margin:0;width:calc(100% - 24px);border:1px solid var(--line);border-radius:24px}
+ .welcome-sheet .sheet-body{padding:0 18px 18px}.intro-panel{padding:0;min-height:235px}.intro-panel h3{font-size:22px}.intro-character{width:clamp(90px,22dvh,180px)}
+ .intro-navigation:has(.intro-demo-actions){flex-direction:column;gap:12px}.intro-demo-actions{width:100%}.intro-navigation:has(.intro-demo-actions) .intro-buttons{width:100%}.intro-demo-actions .button{flex:1;min-width:0;font-size:15px}
+ .profile-header{max-width:calc(100% - 96px)}.profile-header .profile-avatar{width:38px;height:38px}
  .support-card{padding:16px;gap:10px}.support-card strong{font-size:17px}.support-card span span{font-size:14px}.support-icon{display:none}
 }
-@media(prefers-reduced-motion:reduce){.welcome-sheet *{animation:none;transition:none}}
-.welcome-sheet .intro-navigation{position:sticky;bottom:0;z-index:4;background:var(--bg);padding-bottom:6px}
+@media(max-height:680px){
+ .intro-character{width:clamp(70px,16dvh,110px)}.intro-panel{min-height:210px}.intro-panel h3{font-size:21px;margin-bottom:12px}.intro-feature{margin:10px 0}.intro-copy{font-size:15px;margin-bottom:10px}.intro-tip{padding:11px;margin:10px 0}.intro-navigation{margin-top:8px}
+ .welcome-sheet .sheet-header{padding-top:10px}.welcome-sheet .sheet-body{padding-bottom:12px}
+}
+@media(max-height:470px) and (min-width:520px){
+ .intro-scene{flex-direction:row;gap:20px}.intro-character{width:130px}.intro-panel{min-height:0}.intro-panel h3{text-align:left}.intro-navigation{margin-top:12px}
+}
+@media(prefers-reduced-motion:reduce){.welcome-sheet *,.profile-header{animation:none;transition:none}}
