@@ -1,7 +1,7 @@
 const SCOPE=new URL(self.registration.scope);
-const PREFIX=`solyanka:${SCOPE.pathname}:`;
-const CACHE=PREFIX+'v13';
-const FILES=['index.html','styles.css','app.mjs','domain.mjs','storage.mjs','collaboration.mjs','assets/logo.png','assets/favicon.svg','manifest.webmanifest','assets/kei-think.png','assets/kei-welcome.png','assets/backup-art.png','assets/calculator-art.png','assets/delete-art.png'];
+const PREFIX=`tvoy-merch-retro:${SCOPE.pathname}:`;
+const CACHE=PREFIX+'design-3-fullscreen';
+const FILES=['index.html','styles.css','retro.css','app.mjs','domain.mjs','storage.mjs','collaboration.mjs','assets/merch-wordmark.svg','assets/favicon.svg','manifest.webmanifest','assets/kei-think.png','assets/kei-welcome.png','assets/backup-art.png','assets/calculator-art.png','assets/delete-art.png','assets/kei-desktop.png','assets/reference/cinni-wing-left.png','assets/reference/cinni-wing-right.png'];
 const URLS=new Set(FILES.map(file=>new URL(file,SCOPE).href));
 const INDEX=new URL('index.html',SCOPE).href;
 self.addEventListener('install',event=>{

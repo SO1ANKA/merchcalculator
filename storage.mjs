@@ -1,6 +1,6 @@
-const KEY='solyanka-state-v1';
+const KEY='tvoy-merch-retro-state-v1';
 let db,opening,queue=Promise.resolve();
-const openDB=()=>new Promise((resolve,reject)=>{const r=indexedDB.open('solyanka-local',1);r.onupgradeneeded=()=>{r.result.createObjectStore('state');r.result.createObjectStore('photos');};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+const openDB=()=>new Promise((resolve,reject)=>{const r=indexedDB.open('tvoy-merch-retro-local',1);r.onupgradeneeded=()=>{r.result.createObjectStore('state');r.result.createObjectStore('photos');};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
 const tg=()=>globalThis.Telegram?.WebApp;
 function deviceRead() {return new Promise(resolve=>{const d=tg()?.DeviceStorage;if(!d||!tg()?.isVersionAtLeast?.('9.0'))return resolve(null);const timeout=setTimeout(()=>resolve(null),1800);try{d.getItem(KEY,(err,data)=>{clearTimeout(timeout);resolve(err?null:data);});}catch{clearTimeout(timeout);resolve(null);}});}
 function deviceMirror(json){try{if(new Blob([json]).size<4500000&&tg()?.isVersionAtLeast?.('9.0'))tg()?.DeviceStorage?.setItem(KEY,json,()=>{});}catch{}}

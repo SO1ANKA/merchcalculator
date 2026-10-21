@@ -28,15 +28,15 @@ test('offline Telegram launch URLs reuse the same cached app',async()=>{
   const second=await sw.request('./?tgWebAppStartParam=two');
   assert.equal(await first.text(),'cached:/solyanka/index.html');
   assert.equal(await second.text(),'cached:/solyanka/index.html');
-  const bucket=[...sw.buckets.values()][0];assert.equal(bucket.size,14);
+  const bucket=[...sw.buckets.values()][0];assert.equal(bucket.size,18);
   assert.ok([...bucket.keys()].every(url=>!url.includes('?')));
 });
 
 test('resource cleanup leaves other GitHub Pages projects untouched',async()=>{
-  const sw=setup();sw.buckets.set('solyanka:/solyanka/:old',new Map());sw.buckets.set('solyanka:/another-app/:v1',new Map());sw.buckets.set('another-cache',new Map());
+  const sw=setup();sw.buckets.set('tvoy-merch-retro:/solyanka/:old',new Map());sw.buckets.set('solyanka:/another-app/:v1',new Map());sw.buckets.set('another-cache',new Map());sw.buckets.set('solyanka:/solyanka/:v13',new Map());
   await sw.lifecycle('install');await sw.lifecycle('activate');
-  assert.deepEqual(sw.deleted,['solyanka:/solyanka/:old']);
-  assert.ok(sw.buckets.has('solyanka:/another-app/:v1'));assert.ok(sw.buckets.has('another-cache'));
+  assert.deepEqual(sw.deleted,['tvoy-merch-retro:/solyanka/:old']);
+  assert.ok(sw.buckets.has('solyanka:/another-app/:v1'));assert.ok(sw.buckets.has('another-cache'));assert.ok(sw.buckets.has('solyanka:/solyanka/:v13'));
 });
 
 test('offline assets stay available and unrelated files bypass the worker',async()=>{
