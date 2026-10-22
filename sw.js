@@ -1,7 +1,7 @@
 const SCOPE=new URL(self.registration.scope);
 const PREFIX=`solyanka:${SCOPE.pathname}:`;
-const CACHE=PREFIX+'v13';
-const FILES=['index.html','styles.css','app.mjs','domain.mjs','storage.mjs','collaboration.mjs','assets/logo.png','assets/favicon.svg','manifest.webmanifest','assets/kei-think.png','assets/kei-welcome.png','assets/backup-art.png','assets/calculator-art.png','assets/delete-art.png'];
+const CACHE=PREFIX+'unified-10-mobile-code';
+const FILES=['easter-egg.mjs','assets/chiikawa/01.jpg','assets/chiikawa/02.jpg','assets/chiikawa/03.jpg','assets/chiikawa/04.jpg','assets/chiikawa/05.jpg','assets/chiikawa/06.jpg','assets/chiikawa/07.jpg','assets/chiikawa/08.jpg','assets/chiikawa/09.jpg','assets/chiikawa/10.jpg','assets/chiikawa/11.jpg','assets/yuna-portrait.png','assets/yuna-mop.png','assets/brand-main.png','assets/brand-alt.png','assets/wallpaper-portrait.png','assets/wallpaper-landscape.png','assets/novel-xp.jpg','assets/kei-explain.png','assets/kei-folded.png','assets/kei-neutral.png','assets/kei-chibi.png','assets/yuna-notes.png','assets/neli-computer.png','assets/leya-bin.png','assets/yuna-happy.png','assets/yuna-surprised.png','assets/team.png','index.html','styles.css','retro.css','appearance.css','appearance.mjs','app.mjs','domain.mjs','storage.mjs','collaboration.mjs','assets/merch-wordmark.svg','assets/favicon.svg','manifest.webmanifest','assets/kei-think.png','assets/kei-welcome.png','assets/backup-art.png','assets/calculator-art.png','assets/delete-art.png','assets/kei-desktop.png','assets/reference/cinni-wing-left.png','assets/reference/cinni-wing-right.png'];
 const URLS=new Set(FILES.map(file=>new URL(file,SCOPE).href));
 const INDEX=new URL('index.html',SCOPE).href;
 self.addEventListener('install',event=>{

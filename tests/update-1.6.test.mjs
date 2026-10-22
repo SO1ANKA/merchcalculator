@@ -51,7 +51,7 @@ test('unsaved personal state cannot be replaced by demo after a failed save',asy
 test('three welcome pages expose arrows, short storage notice, then a real demo choice',()=>{
  let html='';const ctx=createContext({isDemo:false,art:(name)=>`<img src="${name}.png">`,icon:()=>'',setSheet:(_,body)=>{html=body;},sheet:{classList:{add(){}},querySelector:()=>({focus(){}})}});
  runInContext(extract('welcome'),ctx);
- runInContext('welcome(0)',ctx);assert.ok(html.includes('Предыдущий слайд" disabled'));assert.ok(html.includes('kei-welcome.png'));assert.equal((html.match(/class="intro-feature"/g)||[]).length,3);
- runInContext('welcome(1)',ctx);assert.ok(html.includes('>Хорошо</button>'));assert.ok(html.includes('data-value="2"'));assert.ok(html.includes('kei-think.png'));assert.ok(html.includes('резервную копию'));assert.ok(!html.includes('Предыдущий слайд" disabled'));
+ runInContext('welcome(0)',ctx);assert.ok(html.includes('Предыдущий слайд" disabled'));assert.ok(html.includes('kei-neutral.png'));assert.equal((html.match(/class="intro-feature"/g)||[]).length,3);
+ runInContext('welcome(1)',ctx);assert.ok(html.includes('>Хорошо</button>'));assert.ok(html.includes('data-value="2"'));assert.ok(html.includes('kei-explain.png'));assert.ok(html.includes('резервную копию'));assert.ok(!html.includes('Предыдущий слайд" disabled'));
  runInContext('welcome(2)',ctx);assert.ok(html.includes('data-action="welcome-demo"'));assert.ok(html.includes('Разберусь сам'));assert.ok(html.includes('Страница 3 из 3'));
 });

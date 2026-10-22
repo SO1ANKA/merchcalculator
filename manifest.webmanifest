@@ -1,1 +1,1 @@
-{"name":"«Твой Мерч» — мерч и маркеты","short_name":"«Твой Мерч»","lang":"ru","start_url":"./","scope":"./","display":"standalone","background_color":"#f7f8fa","theme_color":"#ed252a","icons":[{"src":"assets/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{"name":"«Твой Мерч»","short_name":"Твой Мерч","lang":"ru","start_url":"./","scope":"./","display":"standalone","background_color":"#eef6fc","theme_color":"#eef6fc","icons":[{"src":"assets/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
