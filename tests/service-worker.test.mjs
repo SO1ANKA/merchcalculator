@@ -5,7 +5,7 @@ import {runInNewContext} from 'node:vm';
 
 const source=await readFile(new URL('../sw.js',import.meta.url),'utf8');
 function setup(){
-  const listeners=new Map(),buckets=new Map(),deleted=[];
+  const listeners=new Map(),buckets=new Map(),deleted=[],network=[];
   const caches={
     async open(name){if(!buckets.has(name))buckets.set(name,new Map());const entries=buckets.get(name);return {
       async addAll(urls){for(const url of urls)entries.set(url,new Response('cached:'+new URL(url).pathname));},
@@ -16,10 +16,10 @@ function setup(){
     async delete(name){deleted.push(name);return buckets.delete(name);}
   };
   const self={registration:{scope:'https://artist.github.io/solyanka/'},addEventListener(name,handler){listeners.set(name,handler);},skipWaiting:async()=>{},clients:{claim:async()=>{}}};
-  runInNewContext(source,{self,caches,URL,Response,fetch:async()=>{throw new TypeError('offline');}});
+  runInNewContext(source,{self,caches,URL,Response,fetch:async request=>{network.push(request.url);throw new TypeError('offline');}});
   async function lifecycle(name){let done;listeners.get(name)({waitUntil(promise){done=promise;}});await done;}
   async function request(path){let response;const waits=[];listeners.get('fetch')({request:new Request(new URL(path,self.registration.scope)),respondWith(promise){response=promise;},waitUntil(promise){waits.push(promise);}});const result=await response;await Promise.all(waits);return result;}
-  return {buckets,deleted,lifecycle,request};
+  return {buckets,deleted,lifecycle,request,network};
 }
 
 test('offline Telegram launch URLs reuse the same cached app',async()=>{
@@ -28,7 +28,7 @@ test('offline Telegram launch URLs reuse the same cached app',async()=>{
   const second=await sw.request('./?tgWebAppStartParam=two');
   assert.equal(await first.text(),'cached:/solyanka/index.html');
   assert.equal(await second.text(),'cached:/solyanka/index.html');
-  const bucket=[...sw.buckets.values()][0];assert.equal(bucket.size,49);
+  const bucket=[...sw.buckets.values()][0];assert.equal(bucket.size,52);
   assert.ok([...bucket.keys()].every(url=>!url.includes('?')));
 });
 
@@ -44,4 +44,19 @@ test('offline assets stay available and unrelated files bypass the worker',async
   assert.equal(await (await sw.request('app.mjs?version=7')).text(),'cached:/solyanka/app.mjs');
   assert.equal(await sw.request('my-backup.json'),undefined);
   assert.equal(await sw.request('https://telegram.org/js/telegram-web-app.js'),undefined);
+});
+
+// A slow or blocked connection must never delay an installed resource.
+test('installed resources return from cache without any network requests',async()=>{
+ const sw=setup();await sw.lifecycle('install');
+ for(const path of ['./','assets/yuna-portrait.webp','app.mjs','photo-cache.mjs','assets/yuna-portrait.webp']){
+  const response=await sw.request(path);assert.equal(response.status,200);
+ }
+ assert.equal(sw.network.length,0);
+});
+
+test('previously open PNG release can still load its illustrations',async()=>{
+ const sw=setup();await sw.lifecycle('install');
+ assert.equal(await (await sw.request('assets/yuna-portrait.png')).text(),'cached:/solyanka/assets/yuna-portrait.webp');
+ assert.equal(sw.network.length,0);
 });

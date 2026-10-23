@@ -55,3 +55,23 @@ dialog.chiikawa-sheet{position:fixed;left:50%;top:50%;right:auto;bottom:auto;tra
 @media(max-width:480px){.chiikawa-sheet .sheet-body{padding:0 14px 14px}.album-found{font-size:12px}.chiikawa-polaroid{padding:9px 9px 0}.chiikawa-polaroid>img{height:clamp(150px,30dvh,290px)}.chiikawa-polaroid figcaption{font-size:14px;padding:14px 4px}.polaroid-stack{margin-top:20px}.album-navigation{margin:8px 0;gap:20px}.chiikawa-film{gap:6px}}
 
 @media(max-width:800px){.site-footer:not([data-view="inventory"]) .secret-code-footer{display:none}.site-footer:not([data-view="inventory"]) .secret-code-footer~a{flex-basis:auto}}
+
+.secret-code-entry input:not([type=range]):not([type=checkbox]){border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;border-radius:0;min-height:44px;padding:10px 8px}
+.secret-code-entry:focus-within{outline:0;border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
+[hidden]{display:none!important}
+.list-pagination{display:flex;align-items:center;justify-content:center;gap:20px;margin:16px 0 20px}.list-pagination>span{font-size:15px;font-variant-numeric:tabular-nums;color:var(--muted);min-width:60px;text-align:center}.list-pagination>.button{min-width:48px;min-height:44px;padding:8px 12px;font-size:20px}
+[data-quantity-input]{cursor:pointer}
+dialog.quantity-dialog{position:fixed;inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;width:min(480px,calc(100% - 24px));max-width:480px;max-height:calc(var(--visible-height,100dvh) - 24px);padding:0;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);overflow:auto}
+.quantity-dialog .sheet-header{padding:12px 16px;min-height:50px}.quantity-dialog h2{font-size:19px}.quantity-dialog .sheet-body{padding:8px 16px 18px}.quantity-dialog .sheet-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}.quantity-dialog .quantity-picker input{font-size:22px;text-align:center;min-height:48px;min-width:0}.quantity-dialog::backdrop{background:#30283e66}
+@media(max-width:360px){.quantity-dialog .sheet-body{padding:6px 10px 14px}.quantity-dialog .quantity-picker{grid-template-columns:1fr 1fr minmax(58px,1.4fr) 1fr 1fr;gap:3px}.quantity-dialog .quantity-picker button{font-size:16px}}
+
+/* A single outer rim; the buttons keep their glossy pressed surface. */
+[data-appearance=retro] .quantity-control{gap:0;align-items:stretch;border:1px solid var(--chrome-edge);box-shadow:0 2px 0 #67516a20}
+[data-appearance=retro] .quantity-control>input[type=number]{border:0!important;border-radius:0!important;outline:0;box-shadow:none!important;background:var(--card)!important;height:46px;min-height:46px}
+[data-appearance=retro] .quantity-control>button{height:46px;border:0;border-radius:0;background:linear-gradient(var(--tile-top) 0%,var(--chrome-top) 47%,var(--chrome-bottom) 49%,var(--chrome-bottom) 100%);box-shadow:inset 0 1px var(--shine),inset 0 -2px #67516a16}
+[data-appearance=retro] .quantity-control>button:first-child{border-right:1px solid var(--chrome-edge)}
+[data-appearance=retro] .quantity-control>button:last-child{border-left:1px solid var(--chrome-edge)}
+[data-appearance=retro] .quantity-control>button:active{transform:none;background:linear-gradient(var(--chrome-bottom),var(--chrome-top));box-shadow:inset 0 2px 3px #67516a30}
+[data-appearance=retro] .secret-code-entry{border-color:var(--chrome-edge);box-shadow:0 2px 0 #67516a15}
+[data-appearance=retro] .secret-code-entry button{border:0;border-left:1px solid var(--chrome-edge);border-radius:0;background:linear-gradient(var(--tile-top) 0%,var(--chrome-top) 47%,var(--chrome-bottom) 49%,var(--chrome-bottom) 100%);box-shadow:inset 0 1px var(--shine),inset 0 -2px #67516a20}
+[data-appearance=retro] .secret-code-entry button:active{background:linear-gradient(var(--chrome-bottom),var(--chrome-top));box-shadow:inset 0 2px 3px #67516a30}

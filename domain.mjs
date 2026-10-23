@@ -92,7 +92,8 @@ export function projection(plan) {
 }
 export function validatePlan(state,plan,exclude=null) {
   if(!plan.lines.length) fail('Добавь товар в расчёт.');
-  for(const line of plan.lines) { if(line.qty<1 || !Number.isInteger(line.qty)) fail('Количество — целое, от 1.'); if(line.qty>available(state,line.itemId,exclude)) fail(`Для «${line.name}» доступно ${available(state,line.itemId,exclude)} шт. Уменьши количество.`); }
+  const levels=stockLevels(state,exclude);
+  for(const line of plan.lines) { if(line.qty<1 || !Number.isInteger(line.qty)) fail('Количество — целое, от 1.'); const free=levels.get(line.itemId)?.free??0; if(line.qty>free) fail(`Для «${line.name}» доступно ${free} шт. Уменьши количество.`); }
 }
 export function saveEvent(state,plan,meta) {
   validatePlan(state,plan,state.editingId);
